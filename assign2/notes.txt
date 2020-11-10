@@ -1,0 +1,13 @@
+Exercise 2.1
+
+1.) C-h k C-h k opens a buffer with information about the command, C-h k. The reason why this occurs is because C-h k is the command describe-key, which means it displays what the given command does.
+
+2.) C-h k M-SPC opens a buffer with the information about the command, M-SPC. This occurs because C-h k allows the user to type in a key-binding. When the user inputs RET after the keybinding, they get the documentation for that command. M-SPC runs the command just-one-space which deletes all spaces and tabs around a point except for one space (or N spaces).
+
+Homework : Python Scripting
+
+1.) When this script is invoked on /dev/null , an exception is thrown because the file is empty. The script assumes that there must be lines within the file being opened, so an IndexError exception is thrown when no such lines exist.
+
+2.) When this script is run on Python 3, an exception is thrown. This is because some syntax was changed between Python 2 and Python 3. For this reason, a SyntaxError exception is thrown.
+
+3.) When my script is run on Python 2, an exception is thrown. This is because there were syntactical changes between Python 2 and Python 3. For this reason, a SyntaxError exception is thrown.

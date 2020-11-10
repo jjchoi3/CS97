@@ -1,0 +1,39 @@
+Lab 1.5 : Exploring the operating system outside Emacs
+
+1.) mv is located in /usr/local/cs/mv 
+sh is located in /usr/bin/sh
+
+2.) ar - a program that creates, modifies, and extracts from archives
+tr - program that translates or deletes characters from standard input, writing to standard output
+pr - converts text files for printing
+
+3.) The path, /usr/bin/emacs, is actually a symbolic link to /etc/alternatives/emacs
+ 
+4.) The version number of the  /usr/bin/gcc program is 4.8.5. The version number of the plain gcc program is 10.2.0. They are different programs, for they are in different paths in our machine, and are different iterations of gcc. Because the path to the "plain" gcc is in the /usr/local/cs/bin/gcc path, it's possible that it is the updated version for CS courses
+
+5.) u+sx - this gives the owner setuid/gid and execution permissions.
+ o-w - this takes away the write permission for others.
+
+6.) There are too many directories to list, but they can be found using `find /usr/local/cs -mtime -28`
+
+7.) There are 280 symbolic links in /usr/bin 
+
+8.) The oldest file is librom1394. It was last modified on December 28th, 2013.
+
+9.) Locale gets its data from /usr/share/il8n/locales.
+
+10.) 2 commands have 'downcase' in them.
+
+11.) C-M-r - Does an incremental search backward for regular expression.
+C-M-s - Does an incremental search forward for regular expression.
+C-M-t - Transpose sexps.
+C-M-u - Moves backward out of one level of parentheses )or parentheses-like expressions).
+C-M-v Scrolls next window upward ARG lines or near full screen if no argument is given.
+
+12.) C-g - Runs the command keyboard-quit. It signals a 'quit' condition. During execution of Lisp code, this character causes a quit directly. At top-level, as an editor command, this simply beeps.
+
+13.) The Emacs yank function is the equivalent of pasting, or putting copied text somewhere. The command is C-y.
+
+14.) The difference is that dired displays the available GiB, and also colors directories and backup files.
+
+
