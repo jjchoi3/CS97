@@ -1,0 +1,245 @@
+Assignment 5
+
+Setting it up
+1.) I first downloaded the tarball on the remote Seasnet server by using
+`wget https://web.cs.ucla.edu/classes/fall20/cs97-1/assign/randall-assignment.txz`.
+2.) I then unzipped the Tarball by using `tar -xvf randall-assignment.txz`.
+3.) I then looked at the source code for randall.c. There is only one option so far, and
+that is inputting the number of bytes to generate. There is a check for whether the input
+is valid or not—if it’s not, an error is raised. After that, aliases to functions are declared,
+ which can point to some function. Depending on whether hardware random generation
+is supported or not, the aliases will point to different functions. Then, those functions are
+used to generate the given number of bytes. Finally, all file descriptors are closed, any
+errors are printed, and the exit code is returned.
+4.) I then looked at the Makefile, which has the instructions for how randall should be
+built. Additionally, there were targets such as clean and submission, which would build
+the appropriate files.
+
+Adding `make check` to Makefile
+1.) First, I added a `check` target at the bottom of the Makefile with no dependencies.
+2.) I knew that the `wc` command counted the number of outputs, and that the `-c` flag
+counted the number of bytes. In order to make sure the correct number of bytes was
+outputted, I  checked if the number of random bytes generated equaled the number of
+bytes requested. I did this with `./randall 100 | wc -c`
+3.) I then checked if `./randall 100 | wc -c` is equal to 100. If it is, I would print that it was
+successful. Otherwise, I printed that there was a failure.
+
+output.c and output.h
+1.) I began by moving the `writebytes` function to output.c, and declaring it in output.h. I
+also removed the static keyword, because the static keyword would only allow the
+current file to use that function. I then imported the necessary libraries.
+2.) I then imported output.h in randall.c with `#include “./output.h”`.
+3.) I then imported the necessary libraries in output.c.
+
+options.c and options.h
+1.) First, in randall.c’s main function, I copied over the portion of the code that checks for
+options to options.c. I passed in the addresses of `valid` and `nbytes` in order to modify
+them directly from the function. This is because passing by reference does not exist in C
+(while it does in C++).
+2.) I then created a function named `checkOptions` within options.c. The return value
+type is void as it doesn’t return anything. The arguments are `argv`, the address to
+`valid`, and the address to `nbytes`. When changing the values of `valid` and `nbytes`
+ within options.c, I made sure to dereference them first.
+3.) I then declared the function in output.h, and imported the necessary libraries in
+options.c.
+
+rand64-hw.c and rand64-hw.h
+1.) First, I moved all of the hardware implementation functions  from randall.c to rand64-
+hw.c.
+2.) I then moved the`cpuid` structure to rand64-hw.h, and imported it in rand64-hw.c.
+3.) I again removed all of the `static` keywords to allow the functions (and struct) to be
+used outside of that file. I made sure to import all necessary libraries—there were a lot,
+including cpuid.h and immintrin.h.
+4.) I then declared all of the functions and the struct in rand64-hw.h, and imported it in
+randall.c with `#include “./rand64-hw.h”`.
+
+rand64-sw.c and rand64-sw.h
+1.) First I moved all of the software implementation functions and the`urandstream` FILE
+pointer from randall.c to rand64-hw.c and imported the necessary libraries. I once again
+removed all of the `static` keywords in order to allow other files to use it.
+2.) I then declared them in rand64-sw.h, and imported rand64-sw.h in randall.c with
+`#include “./rand64-sw.h”. Nothing else in randall.c had to be modified.
+
+Cleaning Up Modules and Modifying Makefile
+1.) I removed all of the imports in randall.c except for the newly created header imports
+and the errno.h import. Because the other modules are already imported in the other
+files, I do not need to do that again in randall.c. errno.h is the only file that randall.c
+needs but the others don’t, so I imported it in randall.c.
+2.) I then change the Makefile, changing the randall target’s dependency to `*.c` in order
+to check for all .c files when compiling.
+3.) I also changed `$@.c` to `*.c` in the recipe to make sure all of the .c files are
+included when compiling.
+4.) I then used `make` and then `make check` to make sure it still works. It does!
+
+Integrating getopt
+1.) First, I imported the unistd.h library to options.c in order to use the getopt function. I
+also added a parameter to my `checkOptions` function in order to take `argc` as an
+argument, which I will need to use. I also added a parameter to that function which is a
+pointer to a struct named `opts` which holds information about the options. I made sure
+ to update `checkOptions` in both the options header file, and the arguments passed in
+when calling it in randall.c.
+2.) I then created the structure `opts` which would has attributes such as `enum Input`,
+ `char *r_src`, `enum Output`, and `unsigned int block_size`. These will hold the
+necessary inputs from the options. `enum Input` and `enum Output` holds which options
+are picked.
+3.) I then used the example presented in the `getopt` documentation to modify the
+`checkOptions` function, using a while loop through what’s returned by `getopt`, and
+using a switch statement to modify the `options`, `value`, and `nbytes` arguments
+accordingly.
+This is what the code ended up looking like :
+`void checkOptions(char c, char **v,  bool *val, long long *bytes, struct opts *opts){
+  while((c = getopt(c, v, ":i:o:")) != -1){
+    switch(c){
+    case 'i':
+      if(strcmp("rdrand", optarg) == 0){
+        opts->input = RDRAND;
+      }else if (strcmp("mrand48_r", optarg) == 0){
+        opts->input = MRAND48_R;
+      }else if ('/' == optarg[0]){
+        opts->input = SLASH_F;
+        opts->r_src = optarg;
+      }else{
+        break;
+      }
+      *val = true;
+      break;
+    case 'o':
+      if (strcmp("stdout", optarg) != 0){
+        opts->output = N;
+        opts->block_size = atoi(optarg);
+      }
+      *val = true;
+    case ':':
+      break;
+    case '?':
+      break;
+    }
+
+    if (optind >= c){
+      return;
+    }
+  }
+    *bytes = atol(v[optind]);
+    if(*bytes >=0){
+      *val = true;
+    }
+} `
+
+Implementing the -i rdrand Option
+1.) To implement the `-i rdrand` option, I made a check before assigning the software
+functions to the aliases. Because that portion is only reachable if rdrand is not
+supported, there should be an error if the option was used.
+2.) I added an if statement that checks if `options.input` is equal to the enum
+`RDRAND`. If it is, there should be an error.
+3.) Here is what my code looks like :
+`if(options.input == RDRAND){
+	fprintf(stderr, “RDRAND not supported, use software instead\n”);
+	return 1;
+}`
+4.) I was unsure about the instructions—if RDRAND is the default, the software
+implementation would never be used. I assumed that this was a typo, and made RDRAND
+ a chosen option in order to workaround this problem.
+
+Implementing the -i /F option
+1.) First, I began by creating a function within rand64-sw.c which would set the path.
+This function would only be called in randall.c if the `-i /F` option was used, and this was
+checked using an if statement on the options variable created earlier.
+2.) I then created a string variable in rand64-sw.c which would be set to the given path if
+the option was used. Otherwise, the path would be set to the default “/dev/random” if
+the option was not used.
+3.) Here is my `software_rand_64_setPath` function with the newly created variable :
+`static char *path;
+void software_rand64_setPath(char *loc){
+	path = loc;
+	printf(“%s”, path);
+}`
+4.) Here is the portion of the function `software_rand64_init` that sets path
+to “/dev/random” if the `-i /F` option isn’t used :
+`if(!path)
+	path = “/dev/random”;`
+5.) At the end, I made sure to check if the `-i /F` option is used when I’m checking if the
+ hardware is available. Because software should be used when `-i /F` is used, the if
+statement looks like :
+` if (rdrand_supported () && opts.input != SLASH_F) {…}`
+
+Implementing the -i mrand48_r Option
+1.) First, I created a new function called `hardware_rand48` in rand64-hw.c. This
+function will handle the number generation if the user used the `-i mrand48_r` option.
+First, I created a buffer of type `struct drand48_data` which would be passed as an
+argument to `srand48_r` in order to generate the random seed values. I also imported
+the time module with `#include <time.h>` in order to pass `time(NULL)` as an argument
+to `srand48_r`. I also declared two variables `r1` and `r2` which would would hold the
+values after the `mrand48_r` is invoked with them and the buffer as the argument.
+2.) I then created an unsigned long long variable `c`, which would will hold the values of
+the generated numbers. Here is what the new function looks like :
+` unsigned long long hardware_rand48(void){
+  struct drand48_data buf = {0};
+  long int r1, r2;
+  srand48_r(time(NULL), &buf);
+  mrand48_r(&buf, &r1);
+  srand48_r(time(NULL), &buf);
+  mrand48_r(&buf, &r2);
+  unsigned long long int c;
+  c = (((unsigned long long) r1) << 32) | ((unsigned long long) r2 & 0x00000000FFFFFFFF);
+  return c;
+
+}`
+3.) I then made sure to declare the new function in rand64-hw.h, and I created a new
+check in randall.c that would check whether I should use the original `hardware_rand64`
+function or the newly created `hardware_rand48` function by checking if the user used
+the `-i mrand48_r` flag. I did this by checking if `options.input` is equal to the input
+enum `MRAND48_R`.
+
+
+Implementing the -o N Option
+1.) First, I did a check for whether the `-o N` flag was invoked by checking if
+`options.output` is equal to `N` in an if statement.
+2.) I then created a buffer with the appropriate number of bytes allocated using
+`malloc(options.block_size * 1024)`. Then, I proceeded to filling up the buffer by using a
+for loop. After the buffer was full, I would write using the buffer and `outbytes`. I would
+then decrement by the appropriate amount from `nbytes` and continue this until either
+there is an error, or `nbytes` is less than 0. After this is complete, the code proceeds as
+before.
+3.) Here is the code that I added including the check for whether or not the `-o N` option
+was used :
+
+`if (options.output == N){
+    const int all = options.block_size * 1024;
+    unsigned long long *buf = malloc(all);
+    if(buf == NULL){
+      fprintf(stderr, "Error, make sure your N value is valid");
+      return 1;
+    }
+    do{
+      int out = nbytes < wordsize ? nbytes : wordsize;
+      int block = all / sizeof rand64();
+      for(int i = 0; i < block; i++){
+        unsigned long long x = rand64();
+        buf[i] = x;
+      }
+      int status = write(1, buf, out);
+      nbytes -= status;
+      if(status == -1){
+        fprintf(stderr, "Error: unable to write\n");
+        free(buf);
+        return 1;
+      }
+    }while (0 < nbytes);
+  }`
+4.) I also made to import the stdlib.h module in order to use the `write` function.
+
+Timing My Code + Adding Additional Checks
+1.) By using the command that was provided, I got the following results :
+`real    0m0.723s
+user    0m0.011s
+sys     0m0.710s`
+2.) I then proceeded to add an extra check in my Makefile by creating a target named
+`check2`. This would make sure that the `-o N` option works normally. Because the
+number of bytes that are outputted shouldn’t change, `nbytes` should still equal the
+number of bytes that are outputted.
+3.) This is what my check looked like :
+`check2:
+       	if [ `./randall -o 1 10 | wc -c` -eq 10 ]; \
+	then echo "test passed -> ./randall -o 1 10 "; \
+	else echo "test failed -> ./randall -o 1 10 "; \
+	fi;`
