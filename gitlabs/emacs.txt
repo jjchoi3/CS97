@@ -1,0 +1,4 @@
+1.) On the subwindow with the diagram, I see the merge from origin/emacs-27. The subwindow to the right of it contains the author and their email, which is Glenn Morris <rgm@gnu.org> in this case. In the subwindow to the right of that one, it shows the date of when the merge happened, which is 2020-10-17 08:48:54.
+Below the subwindow with the diagram, it shows all of the details—the author, committer, the two parents, the child, the branches, what follows it, and what precedes it. The subwindow next to that one shows the comments, but there are no comments for this commit.
+
+3.) There are many differences between the two. In terms of the files within each repository, Prof. Eggert’s repo contains files not in my repo such as alocal.m4, autom4te.cache, config.log, config.status, configure, info, and Makefile. Another big difference is in the branches—my local repo only has one branch : master. On Prof. Eggert’s repo, there are 179 branches, one of which is master.

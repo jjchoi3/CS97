@@ -1,0 +1,11 @@
+1.) First, I used the `grep -R "Even newspaper" .` command. The "-R" flag specifies that the regular expression should be searched for recursively in the subdirectory listed. The subdirectory is "." because I wanted to search within the tz directory (which was the working directory when I executed the command).
+This command returned :
+./northamerica:# and wrote "Even newspaper reports present contradictory information.
+Because there was only one file returned, I didn't need to type any more of the copyrighted material when searching the expression.
+
+2.) Because I was now aware that the line is from the `northamerica` file, I used `git blame northamerica | grep "Even newspaper"`. `git blame northamerica` is the git commannd to pull up the commits where changes were made in `northamerica` by different contributors on different dates. I then piped that list (log), to `grep "Even newspaper"` in order to find out who wrote the copyrighted text.
+This command returned :
+c8f960ec (Paul Eggert        2013-09-02 08:09:06 -0700  890) # and wrote "Even newspaper reports present contradictory information."
+
+Result : The culprit turned out to be someone named Paul Eggert. He contributed this in September 2nd, 2013, at 8:09am.
+

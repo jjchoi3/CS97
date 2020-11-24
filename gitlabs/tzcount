@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ grep -E "^(Date:).*(\+|-)[0-9]{4}" | grep -Eo "(\+|-)[0-9]{4}" | sort -g | uniq -c | awk '{ print $2 " " $1 }' > tzdb-2020d.tzcount

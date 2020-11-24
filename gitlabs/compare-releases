@@ -1,0 +1,3 @@
+#!/bin/bash
+
+git diff $1 $2 > 2020c-2020d.diff
