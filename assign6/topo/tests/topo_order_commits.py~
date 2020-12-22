@@ -1,0 +1,169 @@
+import sys
+import os
+import zlib
+
+
+def generate_tree():
+    output = topo[0] # change name
+    for i in branch_hashes:
+        if topo[0] == branch_hashes[i]:
+            output = output + ' ' + i
+    print(output)
+    j = 1
+    while(len(topo) > j):
+        output = ''
+        current_commit = topo[j]
+        _parent = parents[topo[j-1]]
+
+        if current_commit not in _parent:
+            for x in range(len(_parent)):
+                next_parent = len(_parent) - 1
+                if x != next_parent:
+                    output +=  _parent[x] + ' '
+                else:
+                    output +=  _parent[x]
+            print(output + '=')
+            print()
+            output = '='
+
+            for x in range(len(children[current_commit])):
+                if x == len(children[current_commit]) - 1:
+                    output += children[current_commit][x]
+                else:
+                    output += children[current_commit][x] + ' '
+            print(output)
+
+        output = current_commit
+        for x in branch_hashes:
+            if topo[j] == branch_hashes[x]:
+                output = output + ' ' + x
+
+        print(output)
+        j += 1
+                    
+
+        
+   
+def generate_topo():
+    global topo
+    topo = list()
+
+    next_item = [i for i in root]
+    
+    while True:
+        current_commit = next_item[0]
+        del next_item[0]
+        topo.append(current_commit)
+        
+        for j in children[current_commit]:
+            parents[j].remove(current_commit)
+
+            if(len(parents[j]) == 0):
+               next_item.append(j)
+
+        if(len(next_item) == 0):
+            break
+    
+    topo.reverse()
+
+def get_commit_nodes():
+    global children
+    global parents
+    children = dict()
+    parents = dict()
+
+    
+    temp = list()
+    # Put branch hashes into list
+    for branch in branches :
+        branch_dir = git_dir + '/refs/heads/' + branch
+        temp.append(open(branch_dir, 'r').read()[:-1])
+
+    
+    while True:
+        current_commit = temp.pop()
+        current_commit_dir = os.path.join((os.path.join(git_dir, 'objects')), current_commit[:2], current_commit[2:])
+        commit_contents = zlib.decompress(open(current_commit_dir, 'rb').read()).decode()
+
+        if current_commit not in parents:
+            parents[current_commit] = []
+        if current_commit not in children:
+            children[current_commit] = []
+
+        while(-1 < commit_contents.find('\nparent')):
+            parent = commit_contents[commit_contents.find('\nparent') + 8 : commit_contents.find('\nparent') + 48]
+            parents[current_commit].append(commit_contents[commit_contents.find('\nparent') + 8 : commit_contents.find('\nparent') + 48])
+
+            if parent not in temp and parent not in parents:
+                temp.append(parent)
+            if parent not in children:
+                children[parent] = []
+
+            children[parent].append(current_commit)
+            commit_contents = commit_contents[commit_contents.find('\nparent') + 48:]
+
+        if(len(temp) == 0):
+            break
+
+    
+
+    global root
+    root = [i for i in parents if (len(parents[i]) == 0)]
+
+
+
+def get_git_dir():
+    dir = os.getcwd()
+    global git_dir
+    
+    # Check first if .git file is in current directory
+    if os.path.isdir(dir + '/.git'):
+        git_dir = dir + '/.git'
+        return
+    # Then check if .git file in parent directories
+    else:
+        dir = dir.split('/')
+        for i in range(len(dir) - 1, 1, -1):            
+            if os.path.isdir('/'.join(dir[0:i]) + '/.git'):
+                git_dir = '/'.join(dir[0:i]) + '/.git'
+                return
+    sys.stderr
+    sys.exit()
+            
+            
+def get_git_branches():    
+    # Append every child file in the /refs/heads directory to a list of branches
+    global branches
+    branches = list()
+    
+    # Check all directories and files within the heads directory
+    for root, dirs, files in os.walk(git_dir + '/refs/heads'):
+        branch_dir = root.split('/')
+        branch_parents = []
+        i = -1
+        while branch_dir[i] != 'heads': # If the parent directory isn't head, then it's within another directory
+            branch_parents.insert(0, branch_dir[i]) 
+            i -= 1
+        branch_parents = '/'.join(branch_parents)
+        if(len(branch_parents) != 0):
+            branch_parents += '/' # Add extra slash at end if the branch has parent directories
+        for filename in files:
+            branches.append(branch_parents + filename)
+            
+    global branch_hashes
+    branch_hashes = dict()
+
+
+    for branch in branches:
+        branch_hashes[branch] = open(f'{git_dir}/refs/heads/{branch}', 'r').read().replace('\n', '')
+        
+def main():
+    get_git_dir() # global git_dir
+    get_git_branches() # global branches
+    get_commit_nodes() # global children, parents, root
+    generate_topo() # global topo
+    generate_tree()
+
+    
+if __name__ == '__main__':
+    main()
